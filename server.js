@@ -13,16 +13,38 @@ app.use(express.json())
 
 
 
-app.get("/", (req, res) => {
-    res.send("Accueil");
-});
-
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: {
         require: true,
       },
 });
+
+app.get("/", (req, res) => {
+    res.send("Accueil");
+});
+
+
+app.post("/users", async (req,res) => {
+    try {
+        const {firstname} = req.body;
+        console.log(firstname)
+        console.log(req.body)
+         if(!firstname ) {
+            return res.status(400).json({ error: "Champs manquants ou invalides" })
+         }
+         
+         const rows = await pool.query(
+            `insert into users (firstname) VALUES ('${firstname}')`,
+            // [user_id, menu_id]
+          );
+        
+          res.status(201).json();
+    } catch (error) {
+        console.log("erreur", error)
+    }
+})
+
 
 
 app.get("/menus", async (req, res) => {
@@ -47,15 +69,51 @@ app.get("/menu/:id", (req, res) => {
 });
 
 
-app.post("/orders", (req, res) => {
-    console.log("[POST /orders] body reçu:", req.body);
-    const { id, plate, clientName } = req.body;
-    if (!id || !plate || !clientName) {
-        return res.status(400).json({ error: "Champs manquants ou invalides" });
+app.post("/orders", async (req,res) => {
+    try {
+        //  const {clientName, id} = req.body;
+
+        //  if(!clientName||!id ) {
+        //     return res.status(400).json({ error: "Champs manquants ou invalides" })
+        //  }
+         
+         const rows = await pool.query(
+            `INSERT INTO orders (user_id,menu_id)
+             VALUES (1, 1)
+            `,
+            // [user_id, menu_id]
+          );
+        
+          res.status(201).json();
+    } catch (error) {
+        console.log("erreur", error)
     }
-    console.log(`[COMMANDE REÇUE] id=${id} | plat="${plate}" | client="${clientName}"`);
-    return res.status(201).json({ ok: true, message: `Commande reçue ${plate} pour ${clientName}` });
-});
+})
+
+
+app.get("/orders", async (req, res) => {
+    try {
+        const response = await pool.query("SELECT * FROM orders")
+        res.json(response.rows)
+    } catch (error) {
+        console.log("erreur", error)
+    }
+    
+})
+
+
+app.post
+
+
+// app.post("/orders",  (req, res) => {
+//     console.log("[POST /orders] body reçu:", req.body);
+//     const { id, plate, clientName } = req.body;
+//     if (!id || !plate || !clientName) {
+//         return res.status(400).json({ error: "Champs manquants ou invalides" });
+//     }
+//     console.log(`[COMMANDE REÇUE] id=${id} | plat="${plate}" | client="${clientName}"`);
+//     return res.status(201).json({ ok: true, message: `Commande reçue ${plate} pour ${clientName}` });
+// });
 
 
 // app.get("/orders", (req,res) =>{
