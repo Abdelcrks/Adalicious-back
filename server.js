@@ -20,9 +20,12 @@ const pool = new Pool({
       },
 });
 
+
+
 app.get("/", (req, res) => {
     res.send("Accueil");
 });
+
 
 
 app.post("/users", async (req,res) => {
@@ -34,12 +37,11 @@ app.post("/users", async (req,res) => {
             return res.status(400).json({ error: "Champs manquants ou invalides" })
          }
          
-         const rows = await pool.query(
-            `insert into users (firstname) VALUES ('${firstname}')`,
-            // [user_id, menu_id]
+         const result = await pool.query(
+           `insert into users (firstname) VALUES ('${firstname}') RETURNING user_id, firstname  `
           );
         
-          res.status(201).json();
+          res.status(201).json(result.rows[0]);
     } catch (error) {
         console.log("erreur", error)
     }
@@ -71,20 +73,23 @@ app.get("/menu/:id", (req, res) => {
 
 app.post("/orders", async (req,res) => {
     try {
-        //  const {clientName, id} = req.body;
+         const {user_id, menu_id} = req.body;
+         console.log('test',{ user_id, menu_id})
 
-        //  if(!clientName||!id ) {
-        //     return res.status(400).json({ error: "Champs manquants ou invalides" })
-        //  }
+
+         if (!user_id || !menu_id) {
+            return res.status(400).json({ ok: false, error: 'user_id et menu_id requis' });
+          }
          
-         const rows = await pool.query(
+         const query = 
             `INSERT INTO orders (user_id,menu_id)
-             VALUES (1, 1)
-            `,
+             VALUES ($1, $2)
+            `
             // [user_id, menu_id]
-          );
+          const insert = await pool.query(query, [user_id, menu_id])
+          console.log('insert', insert)
         
-          res.status(201).json();
+          res.status(201).json({message: "Commande bien reçue"});
     } catch (error) {
         console.log("erreur", error)
     }
@@ -102,8 +107,6 @@ app.get("/orders", async (req, res) => {
 })
 
 
-app.post
-
 
 // app.post("/orders",  (req, res) => {
 //     console.log("[POST /orders] body reçu:", req.body);
@@ -119,6 +122,9 @@ app.post
 // app.get("/orders", (req,res) =>{
 //     res.json(orders);
 // })
+
+
+
 
 app.listen(3000, () => { console.log("Serveur lancé sur http://localhost:3000"); });
 
